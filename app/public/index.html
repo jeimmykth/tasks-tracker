@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Task Tracker</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --surface2:  #22263a;
+      --border:    #2e3250;
+      --accent:    #6c63ff;
+      --accent2:   #a78bfa;
+      --text:      #e2e8f0;
+      --muted:     #64748b;
+      --success:   #22c55e;
+      --warning:   #f59e0b;
+      --danger:    #ef4444;
+      --info:      #38bdf8;
+      --radius:    10px;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    header h1 { font-size: 1.4rem; font-weight: 700; color: var(--accent2); }
+    header span { color: var(--muted); font-size: .85rem; }
+
+    main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    /* ── Metrics ─────────────────────────────────────── */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .metric-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.2rem 1rem;
+      text-align: center;
+    }
+    .metric-card .value { font-size: 2rem; font-weight: 700; color: var(--accent2); }
+    .metric-card .label { font-size: .75rem; color: var(--muted); margin-top: .3rem; text-transform: uppercase; letter-spacing: .05em; }
+
+    /* ── Status pills ────────────────────────────────── */
+    .status-bar {
+      display: flex;
+      gap: .6rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+    .pill {
+      padding: .35rem .9rem;
+      border-radius: 999px;
+      font-size: .8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all .15s;
+    }
+    .pill.all         { background: var(--surface2); color: var(--text); }
+    .pill.pending     { background: #1e293b; color: var(--warning); }
+    .pill.in_progress { background: #1e293b; color: var(--info); }
+    .pill.completed   { background: #1e293b; color: var(--success); }
+    .pill.cancelled   { background: #1e293b; color: var(--danger); }
+    .pill.active      { border-color: var(--accent); }
+
+    /* ── New task form ───────────────────────────────── */
+    .add-form {
+      display: flex;
+      gap: .75rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .add-form input, .add-form textarea {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: .65rem 1rem;
+      font-size: .9rem;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .add-form input:focus, .add-form textarea:focus { border-color: var(--accent); }
+    .add-form input[name="title"] { flex: 1; min-width: 200px; }
+    .add-form input[name="description"] { flex: 2; min-width: 200px; }
+    .btn {
+      padding: .65rem 1.4rem;
+      border-radius: var(--radius);
+      border: none;
+      cursor: pointer;
+      font-size: .9rem;
+      font-weight: 600;
+      transition: opacity .15s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-danger  { background: var(--danger); color: #fff; padding: .3rem .7rem; font-size: .8rem; }
+
+    /* ── Task list ───────────────────────────────────── */
+    #task-list { display: flex; flex-direction: column; gap: .75rem; }
+
+    .task-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.2rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      transition: border-color .15s;
+    }
+    .task-card:hover { border-color: var(--accent); }
+
+    .task-body { flex: 1; }
+    .task-title {
+      font-weight: 600;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+    }
+    .task-desc { color: var(--muted); font-size: .85rem; margin-top: .3rem; }
+    .task-meta { font-size: .75rem; color: var(--muted); margin-top: .5rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+
+    .badge {
+      display: inline-block;
+      padding: .2rem .6rem;
+      border-radius: 999px;
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .badge-pending     { background: #451a0320; color: var(--warning); border: 1px solid #f59e0b44; }
+    .badge-in_progress { background: #0c4a6e20; color: var(--info);    border: 1px solid #38bdf844; }
+    .badge-completed   { background: #14532d20; color: var(--success); border: 1px solid #22c55e44; }
+    .badge-cancelled   { background: #4c0519  ; color: #fca5a5;        border: 1px solid #ef444444; }
+
+    .task-actions { display: flex; gap: .5rem; align-items: center; }
+    select.status-select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      padding: .3rem .5rem;
+      font-size: .8rem;
+      cursor: pointer;
+    }
+
+    .empty { text-align: center; color: var(--muted); padding: 3rem; }
+
+    #toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: .8rem 1.2rem;
+      border-radius: var(--radius);
+      font-size: .85rem;
+      opacity: 0;
+      transition: opacity .3s;
+      pointer-events: none;
+      z-index: 999;
+    }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Task Tracker</h1>
+    <span id="header-date"></span>
+  </header>
+
+  <main>
+    <!-- Metrics -->
+    <div class="metrics-grid" id="metrics-grid">
+      <div class="metric-card"><div class="value" id="m-total">—</div><div class="label">Total</div></div>
+      <div class="metric-card"><div class="value" id="m-pending" style="color:var(--warning)">—</div><div class="label">Pendientes</div></div>
+      <div class="metric-card"><div class="value" id="m-inprogress" style="color:var(--info)">—</div><div class="label">En progreso</div></div>
+      <div class="metric-card"><div class="value" id="m-completed" style="color:var(--success)">—</div><div class="label">Completadas</div></div>
+      <div class="metric-card"><div class="value" id="m-rate">—</div><div class="label">Tasa completado</div></div>
+      <div class="metric-card"><div class="value" id="m-avg">—</div><div class="label">Tiempo promedio</div></div>
+      <div class="metric-card"><div class="value" id="m-today" style="color:var(--accent2)">—</div><div class="label">Hoy</div></div>
+      <div class="metric-card"><div class="value" id="m-week" style="color:var(--accent2)">—</div><div class="label">Esta semana</div></div>
+    </div>
+
+    <!-- Filter pills -->
+    <div class="status-bar">
+      <span class="pill all active"    data-filter="all">Todas</span>
+      <span class="pill pending"       data-filter="pending">Pendiente</span>
+      <span class="pill in_progress"   data-filter="in_progress">En progreso</span>
+      <span class="pill completed"     data-filter="completed">Completada</span>
+      <span class="pill cancelled"     data-filter="cancelled">Cancelada</span>
+    </div>
+
+    <!-- Add task -->
+    <form class="add-form" id="add-form">
+      <input name="title" placeholder="Título de la tarea *" required />
+      <input name="description" placeholder="Descripción (opcional)" />
+      <button type="submit" class="btn btn-primary">+ Agregar</button>
+    </form>
+
+    <!-- List -->
+    <div id="task-list"><p class="empty">Cargando...</p></div>
+  </main>
+
+  <div id="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>
